@@ -65,4 +65,4 @@ async def payment_check(request: Request):
         str(data.get("amount", "")),
         data.get("currency", ""),
         data.get("authCode", ""),
-        data.get("cardPan",
+        data.get("cardPan", "")
