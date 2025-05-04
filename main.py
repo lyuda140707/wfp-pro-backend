@@ -1,13 +1,19 @@
 import hashlib
-from fastapi import FastAPI
+import hmac
+import os
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
-MERCHANT_ACCOUNT = "t_me_d82ef"
-MERCHANT_DOMAIN = "t.me"
-MERCHANT_SECRET = "ТУТ_ТВІЙ_SECRET_KEY"
+MERCHANT_ACCOUNT = os.getenv("MERCHANT_ACCOUNT")
+MERCHANT_DOMAIN = os.getenv("MERCHANT_DOMAIN")
+MERCHANT_SECRET = os.getenv("MERCHANT_SECRET")
+
 
 @app.get("/create-payment")
 def create_payment(user_id: str):
@@ -41,3 +47,22 @@ def create_payment(user_id: str):
         "orderDate": int(datetime.utcnow().timestamp()),
         "merchantSignature": signature
     })
+
+
+# ✅ Endpoint для перевірки оплати
+@app.post("/payment-check")
+async def payment_check(request: Request):
+    data = await request.json()
+
+    # Отримуємо підпис з запиту
+    signature_from_request = data.get("merchantSignature")
+    if not signature_from_request:
+        return JSONResponse({"status": "error", "message": "No signature"}, status_code=400)
+
+    fields_to_sign = [
+        data.get("merchantAccount", ""),
+        data.get("orderReference", ""),
+        str(data.get("amount", "")),
+        data.get("currency", ""),
+        data.get("authCode", ""),
+        data.get("cardPan",
